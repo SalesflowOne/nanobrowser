@@ -412,6 +412,9 @@ export const ModelSettings = ({ isDarkMode = false }: ModelSettingsProps) => {
     } else if (providerType === ProviderTypeEnum.Llama) {
       // Llama needs API Key and Base URL
       hasInput = Boolean(config?.apiKey?.trim()) && Boolean(config?.baseUrl?.trim());
+    } else if (providerType === ProviderTypeEnum.OWeb) {
+      // OWeb: Supabase access token in API Key field + OpenAI-compatible base URL
+      hasInput = Boolean(config?.apiKey?.trim()) && Boolean(config?.baseUrl?.trim());
     } else {
       // Other built-in providers just need API Key
       hasInput = Boolean(config?.apiKey?.trim());
@@ -443,7 +446,8 @@ export const ModelSettings = ({ isDarkMode = false }: ModelSettingsProps) => {
           providers[provider].type === ProviderTypeEnum.Ollama ||
           providers[provider].type === ProviderTypeEnum.AzureOpenAI ||
           providers[provider].type === ProviderTypeEnum.OpenRouter ||
-          providers[provider].type === ProviderTypeEnum.Llama) &&
+          providers[provider].type === ProviderTypeEnum.Llama ||
+          providers[provider].type === ProviderTypeEnum.OWeb) &&
         (!providers[provider].baseUrl || !providers[provider].baseUrl.trim())
       ) {
         alert(t('options_models_providers_errors_baseUrlRequired', getDefaultDisplayNameFromProviderId(provider)));
@@ -1314,7 +1318,8 @@ export const ModelSettings = ({ isDarkMode = false }: ModelSettingsProps) => {
                       providerConfig.type === ProviderTypeEnum.Ollama ||
                       providerConfig.type === ProviderTypeEnum.AzureOpenAI ||
                       providerConfig.type === ProviderTypeEnum.OpenRouter ||
-                      providerConfig.type === ProviderTypeEnum.Llama) && (
+                      providerConfig.type === ProviderTypeEnum.Llama ||
+                      providerConfig.type === ProviderTypeEnum.OWeb) && (
                       <div className="flex flex-col">
                         <div className="flex items-center">
                           <label

@@ -1,11 +1,11 @@
 {
   "app_metadata_description": {
     "description": "Extension description",
-    "message": "Automate web tasks with AI! NanoBrowser is an open-source browser extension that lets you extract data, fill forms, and more."
+    "message": "OWeb Chrome Companion — ask OWeb to navigate, click, and automate tasks in your real browser tabs. Built on Nanobrowser (Apache-2.0)."
   },
   "app_metadata_name": {
     "description": "Extension name",
-    "message": "Nanobrowser: AI Web Agent & Automation"
+    "message": "OWeb: AI Browser Companion"
   },
   "errors_unknown": {
     "message": "Unknown error occurred"
@@ -38,10 +38,10 @@
     "message": "Back to chat"
   },
   "welcome_title": {
-    "message": "Welcome to Nanobrowser!"
+    "message": "Welcome to OWeb"
   },
   "welcome_instruction": {
-    "message": "To get started, please configure your API keys in the settings page."
+    "message": "To get started, add the OWeb provider in Settings and paste your OWeb access token (Sign-in UI coming next)."
   },
   "welcome_openSettings": {
     "message": "Open Settings"

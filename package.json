@@ -1,11 +1,11 @@
 {
-  "name": "nanobrowser",
+  "name": "oweb-chrome-companion",
   "version": "0.1.13",
-  "description": "AI web automation tool",
+  "description": "OWeb Chrome Companion — Nanobrowser fork with OWeb auth/LLM",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nanobrowser/nanobrowser.git"
+    "url": "https://github.com/SalesflowOne/OWeb-Intelligence.git"
   },
   "type": "module",
   "scripts": {
@@ -22,7 +22,7 @@
     "lint": "turbo lint --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
     "lint:fix": "turbo lint:fix --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
     "prettier": "turbo prettier --continue -- --cache --cache-location node_modules/.cache/.prettiercache",
-    "prepare": "husky",
+    "prepare": "node -e \"try{require('husky')}catch(e){}\"",
     "update-version": "bash update_version.sh"
   },
   "dependencies": {

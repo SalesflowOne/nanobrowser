@@ -356,6 +356,23 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
         },
       });
     }
+    case ProviderTypeEnum.OWeb: {
+      // OWeb OpenAI-compatible proxy. apiKey holds the Supabase access token (Bearer).
+      // Optional org scoping via chrome.storage is applied when present.
+      console.log('[createChatModel] Calling createOpenAIChatModel for OWeb');
+      const owebHeaders: Record<string, string> = {
+        'HTTP-Referer': 'https://oweb.one',
+        'X-Title': 'OWeb Chrome Companion',
+      };
+      return createOpenAIChatModel(
+        {
+          ...providerConfig,
+          baseUrl: providerConfig.baseUrl || 'https://oweb.one/api/extension/v1',
+        },
+        modelConfig,
+        { headers: owebHeaders },
+      );
+    }
     case ProviderTypeEnum.Llama: {
       // Llama API has a different response format, use custom ChatLlama class
       const args: {
