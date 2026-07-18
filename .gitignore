@@ -8,6 +8,7 @@
 **/dist
 **/build
 **/dist-zip
+dist-zip
 
 # env
 **/.env.local
@@ -20,6 +21,7 @@
 .DS_Store
 .idea
 **/.turbo
+*.local
 
 # compiled
 chrome-extension/public/manifest.json

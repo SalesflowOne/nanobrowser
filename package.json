@@ -16,6 +16,7 @@
     "clean:install": "pnpm clean:node_modules && pnpm install --frozen-lockfile",
     "build": "pnpm clean:bundle && turbo ready && turbo build",
     "zip": "pnpm build && pnpm -F zipper zip",
+    "zip:store": "cross-env VITE_OWEB_PRODUCT_BUILD=true VITE_OWEB_APP_ORIGIN=https://oweb.one VITE_OWEB_API_BASE=https://oweb.one/api/extension/v1 pnpm build && pnpm -F zipper zip",
     "dev": "turbo ready && cross-env __DEV__=true turbo watch dev --concurrency 20",
     "e2e": "pnpm build && pnpm zip && turbo e2e",
     "type-check": "turbo type-check",

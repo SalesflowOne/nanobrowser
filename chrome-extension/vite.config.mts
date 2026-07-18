@@ -13,7 +13,12 @@ const outDir = resolve(rootDir, '..', 'dist');
 export default defineConfig(({ mode }) => {
   // Load environment variables from the parent directory
   const env = loadEnv(mode, resolve(rootDir, '..'), 'VITE_');
-  
+  const owebAppOrigin = env.VITE_OWEB_APP_ORIGIN || process.env.VITE_OWEB_APP_ORIGIN || 'https://oweb.one';
+  const owebApiBase =
+    env.VITE_OWEB_API_BASE || process.env.VITE_OWEB_API_BASE || `${owebAppOrigin}/api/extension/v1`;
+  const owebProductBuild =
+    (env.VITE_OWEB_PRODUCT_BUILD || process.env.VITE_OWEB_PRODUCT_BUILD || 'true') === 'true';
+
   return {
   resolve: {
     alias: {
@@ -67,6 +72,9 @@ export default defineConfig(({ mode }) => {
   define: {
     'import.meta.env.DEV': isDev,
     'import.meta.env.VITE_POSTHOG_API_KEY': JSON.stringify(env.VITE_POSTHOG_API_KEY || process.env.VITE_POSTHOG_API_KEY || ''),
+    __OWEB_APP_ORIGIN__: JSON.stringify(owebAppOrigin),
+    __OWEB_API_BASE__: JSON.stringify(owebApiBase),
+    __OWEB_PRODUCT_BUILD__: owebProductBuild,
   },
 
   envDir: '../',

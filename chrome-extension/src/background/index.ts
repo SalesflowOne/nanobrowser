@@ -18,6 +18,13 @@ import { DEFAULT_AGENT_OPTIONS } from './agent/types';
 import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
+import {
+  getActiveOwebOrgId,
+  refreshOwebSessionIfNeeded,
+  signInWithOweb,
+  signOutOweb,
+} from './services/owebAuth';
+import { owebAuthStore, ProviderTypeEnum } from '@extension/storage';
 
 const logger = createLogger('background');
 
@@ -66,11 +73,53 @@ analyticsSettingsStore.subscribe(() => {
   });
 });
 
-// Listen for simple messages (e.g., from options page)
-chrome.runtime.onMessage.addListener(() => {
-  // Handle other message types if needed in the future
-  // Return false if response is not sent asynchronously
-  // return false;
+// Listen for simple messages (e.g., from options / side panel)
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  const type = message?.type as string | undefined;
+  if (!type?.startsWith('oweb_')) return false;
+
+  (async () => {
+    try {
+      switch (type) {
+        case 'oweb_sign_in': {
+          const session = await signInWithOweb();
+          sendResponse({ ok: true, session });
+          break;
+        }
+        case 'oweb_sign_out': {
+          await signOutOweb();
+          sendResponse({ ok: true });
+          break;
+        }
+        case 'oweb_get_session': {
+          const session = await refreshOwebSessionIfNeeded();
+          sendResponse({ ok: true, session });
+          break;
+        }
+        case 'oweb_set_org': {
+          const orgId = message.orgId as string;
+          if (!orgId) throw new Error('orgId required');
+          await owebAuthStore.setActiveOrgId(orgId);
+          sendResponse({ ok: true });
+          break;
+        }
+        case 'oweb_refresh_session': {
+          const session = await refreshOwebSessionIfNeeded();
+          sendResponse({ ok: true, session });
+          break;
+        }
+        default:
+          sendResponse({ ok: false, error: `Unknown message: ${type}` });
+      }
+    } catch (error) {
+      sendResponse({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  })();
+
+  return true; // async sendResponse
 });
 
 // Setup connection listener for long-lived connections (e.g., side panel)
@@ -266,6 +315,9 @@ chrome.runtime.onConnect.addListener(port => {
 });
 
 async function setupExecutor(taskId: string, task: string, browserContext: BrowserContext) {
+  // Refresh OWeb session / provider keys before resolving models
+  await refreshOwebSessionIfNeeded();
+
   const providers = await llmProviderStore.getAllProviders();
   // if no providers, need to display the options page
   if (Object.keys(providers).length === 0) {
@@ -283,19 +335,27 @@ async function setupExecutor(taskId: string, task: string, browserContext: Brows
     }
   }
 
+  const orgId = await getActiveOwebOrgId();
+  const withOrg = <T extends Record<string, unknown>>(config: T, providerId: string): T => {
+    if (providerId === ProviderTypeEnum.OWeb && orgId) {
+      return { ...config, orgId };
+    }
+    return config;
+  };
+
   const navigatorModel = agentModels[AgentNameEnum.Navigator];
   if (!navigatorModel) {
     throw new Error(t('bg_setup_noNavigatorModel'));
   }
   // Log the provider config being used for the navigator
-  const navigatorProviderConfig = providers[navigatorModel.provider];
+  const navigatorProviderConfig = withOrg(providers[navigatorModel.provider], navigatorModel.provider);
   const navigatorLLM = createChatModel(navigatorProviderConfig, navigatorModel);
 
   let plannerLLM: BaseChatModel | null = null;
   const plannerModel = agentModels[AgentNameEnum.Planner];
   if (plannerModel) {
     // Log the provider config being used for the planner
-    const plannerProviderConfig = providers[plannerModel.provider];
+    const plannerProviderConfig = withOrg(providers[plannerModel.provider], plannerModel.provider);
     plannerLLM = createChatModel(plannerProviderConfig, plannerModel);
   }
 

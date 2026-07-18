@@ -59,15 +59,23 @@ pnpm build
 5. Optional header via future UI: `X-OWeb-Org-Id`.
 6. Assign Planner + Navigator to an OWeb model (e.g. `google/gemini-2.5-flash`).
 
+## Store package
+
+```bash
+pnpm zip:store
+# → dist-zip/extension-YYYYMMDD-HHMMSS.zip
+```
+
 ## Adaptation checklist
 
 - [x] Fork under SalesflowOne/nanobrowser
 - [x] `oweb` branch with provider wiring
 - [x] `ProviderTypeEnum.OWeb` + `createChatModel` branch
 - [x] Soft EN branding strings
-- [ ] Supabase PKCE sign-in UI (replace paste-token)
-- [ ] Default-on OWeb provider + hide BYOK for product builds
-- [ ] Org picker + credit display
+- [x] Chrome identity sign-in via `/auth/extension` (no paste-token)
+- [x] Default-on OWeb provider + hide BYOK in product/options Account tab
+- [x] Org picker + credit display
+- [x] `pnpm zip:store` Store package script
 - [ ] Thread sync with `ao_threads`
 - [ ] Composio / cloud browser tool bridge
 - [ ] Teach OWeb observe mode → extension-ingest
