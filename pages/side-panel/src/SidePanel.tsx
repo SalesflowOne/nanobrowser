@@ -34,6 +34,9 @@ const SidePanel = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [favoritePrompts, setFavoritePrompts] = useState<FavoritePrompt[]>([]);
   const [hasConfiguredModels, setHasConfiguredModels] = useState<boolean | null>(null); // null = loading, false = no models, true = has models
+  const [owebSignedIn, setOwebSignedIn] = useState<boolean | null>(null);
+  const [owebSignInBusy, setOwebSignInBusy] = useState(false);
+  const [owebSignInError, setOwebSignInError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
@@ -61,16 +64,23 @@ const SidePanel = () => {
     return () => darkModeMediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Check if models are configured
+  // Check if OWeb session + models are configured
   const checkModelConfiguration = useCallback(async () => {
     try {
-      const configuredAgents = await agentModelStore.getConfiguredAgents();
+      const sessionRes = await new Promise<{ ok: boolean; session?: { accessToken?: string } | null }>(resolve => {
+        chrome.runtime.sendMessage({ type: 'oweb_get_session' }, response => {
+          resolve(response || { ok: false, session: null });
+        });
+      });
+      const signedIn = Boolean(sessionRes?.ok && sessionRes.session?.accessToken);
+      setOwebSignedIn(signedIn);
 
-      // Check if at least one agent (preferably Navigator) is configured
+      const configuredAgents = await agentModelStore.getConfiguredAgents();
       const hasAtLeastOneModel = configuredAgents.length > 0;
-      setHasConfiguredModels(hasAtLeastOneModel);
+      setHasConfiguredModels(signedIn && hasAtLeastOneModel);
     } catch (error) {
       console.error('Error checking model configuration:', error);
+      setOwebSignedIn(false);
       setHasConfiguredModels(false);
     }
   }, []);
@@ -1082,38 +1092,56 @@ const SidePanel = () => {
               </div>
             )}
 
-            {/* Show setup message when no models are configured */}
+            {/* Show setup message when not signed in / no models */}
             {hasConfiguredModels === false && (
               <div
                 className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
                 <div className="max-w-md text-center">
-                  <img src="/icon-128.png" alt="Nanobrowser Logo" className="mx-auto mb-4 size-12" />
+                  <img src="/icon-128.png" alt="OWeb Logo" className="mx-auto mb-4 size-12" />
                   <h3 className={`mb-2 text-lg font-semibold ${isDarkMode ? 'text-sky-200' : 'text-sky-700'}`}>
                     {t('welcome_title')}
                   </h3>
                   <p className="mb-4">{t('welcome_instruction')}</p>
+                  {owebSignInError ? <p className="mb-3 text-sm text-red-500">{owebSignInError}</p> : null}
+                  <button
+                    disabled={owebSignInBusy}
+                    onClick={() => {
+                      setOwebSignInBusy(true);
+                      setOwebSignInError(null);
+                      chrome.runtime.sendMessage({ type: 'oweb_sign_in' }, response => {
+                        setOwebSignInBusy(false);
+                        if (chrome.runtime.lastError) {
+                          setOwebSignInError(chrome.runtime.lastError.message || 'Sign-in failed');
+                          return;
+                        }
+                        if (!response?.ok) {
+                          setOwebSignInError(response?.error || 'Sign-in failed');
+                          return;
+                        }
+                        void checkModelConfiguration();
+                      });
+                    }}
+                    className={`my-2 rounded-lg px-4 py-2 font-medium transition-colors ${
+                      isDarkMode ? 'bg-sky-600 text-white hover:bg-sky-700' : 'bg-sky-500 text-white hover:bg-sky-600'
+                    }`}>
+                    {owebSignInBusy ? 'Connecting…' : t('welcome_signIn')}
+                  </button>
                   <button
                     onClick={() => chrome.runtime.openOptionsPage()}
-                    className={`my-4 rounded-lg px-4 py-2 font-medium transition-colors ${
-                      isDarkMode ? 'bg-sky-600 text-white hover:bg-sky-700' : 'bg-sky-500 text-white hover:bg-sky-600'
+                    className={`my-2 rounded-lg px-4 py-2 font-medium transition-colors ${
+                      isDarkMode
+                        ? 'bg-slate-700 text-sky-100 hover:bg-slate-600'
+                        : 'bg-sky-100 text-sky-800 hover:bg-sky-200'
                     }`}>
                     {t('welcome_openSettings')}
                   </button>
                   <div className="mt-4 text-sm opacity-75">
                     <a
-                      href="https://github.com/nanobrowser/nanobrowser?tab=readme-ov-file#-quick-start"
+                      href="https://oweb.one"
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-700 hover:text-sky-600'}`}>
-                      {t('welcome_quickStart')}
-                    </a>
-                    <span className="mx-2">•</span>
-                    <a
-                      href="https://discord.gg/NN3ABHggMK"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-700 hover:text-sky-600'}`}>
-                      {t('welcome_joinCommunity')}
+                      oweb.one
                     </a>
                   </div>
                 </div>

@@ -39,7 +39,7 @@ function withOperaSidebar(manifest) {
   return deepmerge(manifest, {
     sidebar_action: {
       default_panel: 'side-panel/index.html',
-      default_title: 'Nanobrowser',
+      default_title: 'OWeb',
       default_icon: 'icon-32.png',
     },
   });
@@ -61,7 +61,16 @@ const manifest = withOperaSidebar(
     version: packageJson.version,
     description: '__MSG_app_metadata_description__',
     host_permissions: ['<all_urls>'],
-    permissions: ['storage', 'scripting', 'tabs', 'activeTab', 'debugger', 'unlimitedStorage', 'webNavigation'],
+    permissions: [
+      'storage',
+      'scripting',
+      'tabs',
+      'activeTab',
+      'debugger',
+      'unlimitedStorage',
+      'webNavigation',
+      'identity',
+    ],
     options_page: 'options/index.html',
     background: {
       service_worker: 'background.iife.js',
