@@ -1,13 +1,14 @@
 # OWeb × Nanobrowser Fork
 
-> Upstream: [nanobrowser/nanobrowser](https://github.com/nanobrowser/nanobrowser)  
-> Vendored commit: `322384f8b4d48d8614343e51efca68c85e64f90b` (v0.1.13-era)  
+> **Canonical fork:** https://github.com/SalesflowOne/nanobrowser  
+> **Product branch:** `oweb`  
+> Upstream parent: [nanobrowser/nanobrowser](https://github.com/nanobrowser/nanobrowser)  
 > License: Apache-2.0 (see `LICENSE`)  
-> Product plan: `docs/CHROME_COMPANION_MASTER_PLAN.md`
+> Product plan: OWeb-Intelligence `docs/CHROME_COMPANION_MASTER_PLAN.md`
 
 ## Decision
 
-OWeb Chrome Companion is a **fork of Nanobrowser**, not a greenfield MV3 shell.
+OWeb Chrome Companion is developed in **SalesflowOne/nanobrowser** (`oweb` branch). This directory in OWeb-Intelligence is a synced working copy for monorepo dogfooding; prefer opening extension PRs against the canonical fork.
 
 Nanobrowser already provides:
 
@@ -44,10 +45,9 @@ Local browser tools remain Nanobrowser’s. Server tools (Composio, cloud Anchor
 Requires Node ≥ 22.12 and pnpm 9.15.1:
 
 ```bash
-cd extensions/chrome-nanobrowser
 pnpm install
 pnpm build
-# Load unpacked: extensions/chrome-nanobrowser/dist
+# Load unpacked: dist/
 ```
 
 ## Configure OWeb provider
@@ -61,9 +61,9 @@ pnpm build
 
 ## Adaptation checklist
 
-- [x] Vendor upstream source (no nested `.git`)
+- [x] Fork under SalesflowOne/nanobrowser
+- [x] `oweb` branch with provider wiring
 - [x] `ProviderTypeEnum.OWeb` + `createChatModel` branch
-- [x] OpenAI-compatible proxy route on OWeb
 - [x] Soft EN branding strings
 - [ ] Supabase PKCE sign-in UI (replace paste-token)
 - [ ] Default-on OWeb provider + hide BYOK for product builds
@@ -73,6 +73,7 @@ pnpm build
 - [ ] Teach OWeb observe mode → extension-ingest
 - [ ] Chrome Web Store listing as “OWeb”
 
-## Syncing upstream
+## Syncing
 
-Prefer cherry-picks / selective merges from Nanobrowser `master`. Do not force-push over OWeb-only files (`OWEB_FORK.md`, provider stubs).
+- Upstream Nanobrowser → merge into `SalesflowOne/nanobrowser` `master`, then into `oweb`
+- OWeb-Intelligence `extensions/chrome-nanobrowser/` ← sync from `oweb` when shipping companion changes with the API proxy
