@@ -358,11 +358,14 @@ export function createChatModel(providerConfig: ProviderConfig, modelConfig: Mod
     }
     case ProviderTypeEnum.OWeb: {
       // OWeb OpenAI-compatible proxy. apiKey holds the Supabase access token (Bearer).
-      // Optional org scoping via chrome.storage is applied when present.
       console.log('[createChatModel] Calling createOpenAIChatModel for OWeb');
       const owebHeaders: Record<string, string> = {
         'HTTP-Referer': 'https://oweb.one',
         'X-Title': 'OWeb Chrome Companion',
+        ...(typeof (providerConfig as { orgId?: string }).orgId === 'string' &&
+        (providerConfig as { orgId?: string }).orgId
+          ? { 'X-OWeb-Org-Id': (providerConfig as { orgId?: string }).orgId as string }
+          : {}),
       };
       return createOpenAIChatModel(
         {

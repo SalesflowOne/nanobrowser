@@ -41,10 +41,13 @@
     "message": "Welcome to OWeb"
   },
   "welcome_instruction": {
-    "message": "To get started, add the OWeb provider in Settings and paste your OWeb access token (Sign-in UI coming next)."
+    "message": "Sign in with your OWeb account to let the companion use your tabs, credits, and workspace."
   },
   "welcome_openSettings": {
     "message": "Open Settings"
+  },
+  "welcome_signIn": {
+    "message": "Sign in with OWeb"
   },
   "welcome_quickStart": {
     "message": "Quick Start Guide"
@@ -492,7 +495,7 @@
     "message": "Replay failed"
   },
   "bg_setup_noApiKeys": {
-    "message": "Please configure API keys in the settings first"
+    "message": "Sign in with OWeb before running a task."
   },
   "bg_setup_noProvider": {
     "message": "Provider $PROVIDER$ not found in the settings",

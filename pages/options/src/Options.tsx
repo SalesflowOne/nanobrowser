@@ -8,19 +8,24 @@ import { GeneralSettings } from './components/GeneralSettings';
 import { ModelSettings } from './components/ModelSettings';
 import { FirewallSettings } from './components/FirewallSettings';
 import { AnalyticsSettings } from './components/AnalyticsSettings';
+import { OWebAccountSettings } from './components/OWebAccountSettings';
+import { FiUser } from 'react-icons/fi';
 
-type TabTypes = 'general' | 'models' | 'firewall' | 'analytics' | 'help';
+type TabTypes = 'account' | 'general' | 'models' | 'firewall' | 'analytics' | 'help';
+
+const PRODUCT_BUILD = true;
 
 const TABS: { id: TabTypes; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
+  { id: 'account', icon: FiUser, label: 'OWeb' },
   { id: 'general', icon: FiSettings, label: t('options_tabs_general') },
-  { id: 'models', icon: FiCpu, label: t('options_tabs_models') },
+  ...(PRODUCT_BUILD ? [] : [{ id: 'models' as const, icon: FiCpu, label: t('options_tabs_models') }]),
   { id: 'firewall', icon: FiShield, label: t('options_tabs_firewall') },
   { id: 'analytics', icon: FiTrendingUp, label: 'Analytics' },
   { id: 'help', icon: FiHelpCircle, label: t('options_tabs_help') },
 ];
 
 const Options = () => {
-  const [activeTab, setActiveTab] = useState<TabTypes>('models');
+  const [activeTab, setActiveTab] = useState<TabTypes>('account');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Check for dark mode preference
@@ -38,7 +43,7 @@ const Options = () => {
 
   const handleTabClick = (tabId: TabTypes) => {
     if (tabId === 'help') {
-      window.open('https://nanobrowser.ai/docs', '_blank');
+      window.open('https://oweb.one/docs', '_blank');
     } else {
       setActiveTab(tabId);
     }
@@ -46,10 +51,12 @@ const Options = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'account':
+        return <OWebAccountSettings isDarkMode={isDarkMode} />;
       case 'general':
         return <GeneralSettings isDarkMode={isDarkMode} />;
       case 'models':
-        return <ModelSettings isDarkMode={isDarkMode} />;
+        return PRODUCT_BUILD ? <OWebAccountSettings isDarkMode={isDarkMode} /> : <ModelSettings isDarkMode={isDarkMode} />;
       case 'firewall':
         return <FirewallSettings isDarkMode={isDarkMode} />;
       case 'analytics':
