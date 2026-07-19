@@ -52,10 +52,9 @@ export const llmProviderModelNames = {
     'Llama-4-Scout-17B-16E-Instruct-FP8',
   ],
   [ProviderTypeEnum.OWeb]: [
+    // Store / product build: Gemini only via OWeb AI Gateway
     'google/gemini-2.5-flash',
     'google/gemini-2.5-pro',
-    'openai/gpt-4o',
-    'anthropic/claude-sonnet-4-5',
   ],
   // Custom OpenAI providers don't have predefined models as they are user-defined
 };
