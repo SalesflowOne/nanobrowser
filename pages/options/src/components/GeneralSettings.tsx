@@ -38,6 +38,27 @@ export const GeneralSettings = ({ isDarkMode = false }: GeneralSettingsProps) =>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
+              <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Appearance</h3>
+              <p className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Light, dark, or match your system preference
+              </p>
+            </div>
+            <label htmlFor="themeMode" className="sr-only">
+              Theme
+            </label>
+            <select
+              id="themeMode"
+              value={settings.themeMode ?? 'system'}
+              onChange={e => updateSetting('themeMode', e.target.value as GeneralSettingsConfig['themeMode'])}
+              className={`rounded-md border px-3 py-2 ${isDarkMode ? 'border-slate-600 bg-slate-700 text-gray-200' : 'border-gray-300 bg-white text-gray-700'}`}>
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
               <h3 className={`text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 {t('options_general_maxSteps')}
               </h3>
