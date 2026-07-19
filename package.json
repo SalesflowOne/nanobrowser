@@ -1,7 +1,7 @@
 {
   "name": "oweb-chrome-companion",
   "version": "0.1.13",
-  "description": "OWeb Chrome Companion — Nanobrowser fork with OWeb auth/LLM",
+  "description": "OWeb Chrome Companion — AI browser automation with OWeb auth and models",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
