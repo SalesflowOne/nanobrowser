@@ -2,21 +2,22 @@ import { StorageEnum } from '../base/enums';
 import { createStorage } from '../base/base';
 import type { BaseStorage } from '../base/types';
 
-// Template data
+// Template data — OWeb product defaults (no third-party promo prompts)
 const defaultFavoritePrompts = [
   {
-    title: '📚 Explore AI Papers',
+    title: 'Explore AI papers',
     content:
       '- Go to https://huggingface.co/papers and click through each of the first 3 papers.\n- For each paper:\n  - Record the title, URL and upvotes\n  - Summarise the abstract section\n- Finally, compile together a summary of all 3 papers, ranked by upvotes',
   },
   {
-    title: '🐦 Follow us on X/Twitter!',
-    content: 'Follow us at https://x.com/nanobrowser_ai to stay updated on the latest news and features!',
+    title: 'Summarize this page',
+    content:
+      'Read the current page carefully and give me a concise summary: what it is, who it is for, and the three most important takeaways.',
   },
   {
-    title: '🌟 Star us on GitHub!',
+    title: 'Find contact info',
     content:
-      "Open the Nanobrowser repository at https://github.com/nanobrowser/nanobrowser and check if you've already starred it. If not, please support us by giving us a star!",
+      'On this site, find the best contact options (email, form, or booking link). List what you found with the URLs.',
   },
 ];
 

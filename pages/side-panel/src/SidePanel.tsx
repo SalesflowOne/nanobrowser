@@ -1,16 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RxDiscordLogo } from 'react-icons/rx';
-import { FiSettings } from 'react-icons/fi';
+import { FiMoon, FiSettings, FiSun } from 'react-icons/fi';
 import { PiPlusBold } from 'react-icons/pi';
 import { GrHistory } from 'react-icons/gr';
-import { type Message, Actors, chatHistoryStore, agentModelStore, generalSettingsStore } from '@extension/storage';
+import {
+  type Message,
+  Actors,
+  chatHistoryStore,
+  agentModelStore,
+  generalSettingsStore,
+  owebAuthStore,
+  type ThemeMode,
+} from '@extension/storage';
 import favoritesStorage, { type FavoritePrompt } from '@extension/storage/lib/prompt/favorites';
 import { t } from '@extension/i18n';
 import MessageList from './components/MessageList';
 import ChatInput from './components/ChatInput';
 import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
+import ModelPicker from './components/ModelPicker';
+import { displayNameFromSession } from './lib/displayName';
 import { EventType, type AgentEvent, ExecutionState } from './types/event';
 import './SidePanel.css';
 
@@ -32,6 +41,8 @@ const SidePanel = () => {
   const [isFollowUpMode, setIsFollowUpMode] = useState(false);
   const [isHistoricalSession, setIsHistoricalSession] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
+  const [userDisplayName, setUserDisplayName] = useState('You');
   const [favoritePrompts, setFavoritePrompts] = useState<FavoritePrompt[]>([]);
   const [hasConfiguredModels, setHasConfiguredModels] = useState<boolean | null>(null); // null = loading, false = no models, true = has models
   const [owebSignedIn, setOwebSignedIn] = useState<boolean | null>(null);
@@ -51,18 +62,70 @@ const SidePanel = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<number | null>(null);
 
-  // Check for dark mode preference
+  // Resolve light/dark from stored themeMode + OS preference
   useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMediaQuery.matches);
+    let cancelled = false;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
 
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches);
+    const applyTheme = (mode: ThemeMode) => {
+      const dark = mode === 'dark' || (mode === 'system' && media.matches);
+      if (!cancelled) setIsDarkMode(dark);
     };
 
-    darkModeMediaQuery.addEventListener('change', handleChange);
-    return () => darkModeMediaQuery.removeEventListener('change', handleChange);
+    const load = async () => {
+      try {
+        const settings = await generalSettingsStore.getSettings();
+        if (cancelled) return;
+        setThemeMode(settings.themeMode ?? 'system');
+        applyTheme(settings.themeMode ?? 'system');
+      } catch {
+        applyTheme('system');
+      }
+    };
+
+    void load();
+    const onMedia = () => {
+      void generalSettingsStore.getSettings().then(s => applyTheme(s.themeMode ?? 'system'));
+    };
+    media.addEventListener('change', onMedia);
+    const unsub = generalSettingsStore.subscribe(() => {
+      void load();
+    });
+    return () => {
+      cancelled = true;
+      media.removeEventListener('change', onMedia);
+      unsub();
+    };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadName = async () => {
+      try {
+        const session = await owebAuthStore.getSession();
+        if (!cancelled) setUserDisplayName(displayNameFromSession(session));
+      } catch {
+        if (!cancelled) setUserDisplayName('You');
+      }
+    };
+    void loadName();
+    const unsub = owebAuthStore.subscribe(() => {
+      void loadName();
+    });
+    return () => {
+      cancelled = true;
+      unsub();
+    };
+  }, []);
+
+  const cycleTheme = useCallback(async () => {
+    const order: ThemeMode[] = ['system', 'light', 'dark'];
+    const next = order[(order.indexOf(themeMode) + 1) % order.length];
+    setThemeMode(next);
+    await generalSettingsStore.updateSettings({ themeMode: next });
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(next === 'dark' || (next === 'system' && media.matches));
+  }, [themeMode]);
 
   // Check if OWeb session + models are configured
   const checkModelConfiguration = useCallback(async () => {
@@ -1011,20 +1074,18 @@ const SidePanel = () => {
 
   return (
     <div>
-      <div
-        className={`flex h-screen flex-col ${isDarkMode ? 'bg-slate-900' : "bg-[url('/bg.jpg')] bg-cover bg-no-repeat"} overflow-hidden border ${isDarkMode ? 'border-sky-800' : 'border-[rgb(186,230,253)]'} rounded-2xl`}>
+      <div className={`companion-shell ${isDarkMode ? 'is-dark' : ''}`}>
         <header className="header relative">
           <div className="header-logo">
             {showHistory ? (
-              <button
-                type="button"
-                onClick={() => handleBackToChat(false)}
-                className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-                aria-label={t('nav_back_a11y')}>
+              <button type="button" onClick={() => handleBackToChat(false)} className="header-back" aria-label={t('nav_back_a11y')}>
                 {t('nav_back')}
               </button>
             ) : (
-              <img src="/icon-128.png" alt="Extension Logo" className="size-6" />
+              <div className="header-brand">
+                <img src="/icon-128.png" alt="" className="header-brand-mark" />
+                <span className="header-brand-name">OWeb</span>
+              </div>
             )}
           </div>
           <div className="header-icons">
@@ -1034,40 +1095,47 @@ const SidePanel = () => {
                   type="button"
                   onClick={handleNewChat}
                   onKeyDown={e => e.key === 'Enter' && handleNewChat()}
-                  className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
+                  className="header-icon"
                   aria-label={t('nav_newChat_a11y')}
                   tabIndex={0}>
-                  <PiPlusBold size={20} />
+                  <PiPlusBold size={18} />
                 </button>
                 <button
                   type="button"
                   onClick={handleLoadHistory}
                   onKeyDown={e => e.key === 'Enter' && handleLoadHistory()}
-                  className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
+                  className="header-icon"
                   aria-label={t('nav_loadHistory_a11y')}
                   tabIndex={0}>
-                  <GrHistory size={20} />
+                  <GrHistory size={18} />
                 </button>
               </>
             )}
-            <a
-              href="https://discord.gg/NN3ABHggMK"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'}`}>
-              <RxDiscordLogo size={20} />
-            </a>
+            <button
+              type="button"
+              onClick={() => void cycleTheme()}
+              className="header-icon"
+              aria-label={`Theme: ${themeMode}`}
+              title={`Theme: ${themeMode}`}
+              tabIndex={0}>
+              {isDarkMode ? <FiSun size={18} /> : <FiMoon size={18} />}
+            </button>
             <button
               type="button"
               onClick={() => chrome.runtime.openOptionsPage()}
               onKeyDown={e => e.key === 'Enter' && chrome.runtime.openOptionsPage()}
-              className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
+              className="header-icon"
               aria-label={t('nav_settings_a11y')}
               tabIndex={0}>
-              <FiSettings size={20} />
+              <FiSettings size={18} />
             </button>
           </div>
         </header>
+
+        {!showHistory && hasConfiguredModels === true ? (
+          <ModelPicker isDarkMode={isDarkMode} disabled={showStopButton} />
+        ) : null}
+
         {showHistory ? (
           <div className="flex-1 overflow-hidden">
             <ChatHistoryList
@@ -1081,30 +1149,26 @@ const SidePanel = () => {
           </div>
         ) : (
           <>
-            {/* Show loading state while checking model configuration */}
             {hasConfiguredModels === null && (
-              <div
-                className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                <div className="text-center">
-                  <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-2 border-sky-400 border-t-transparent"></div>
-                  <p>{t('status_checkingConfig')}</p>
+              <div className="empty-state">
+                <div className="empty-state-inner">
+                  <div className="loading-spinner" />
+                  <p className="empty-state-copy">{t('status_checkingConfig')}</p>
                 </div>
               </div>
             )}
 
-            {/* Show setup message when not signed in / no models */}
             {hasConfiguredModels === false && (
-              <div
-                className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                <div className="max-w-md text-center">
-                  <img src="/icon-128.png" alt="OWeb Logo" className="mx-auto mb-4 size-12" />
-                  <h3 className={`mb-2 text-lg font-semibold ${isDarkMode ? 'text-sky-200' : 'text-sky-700'}`}>
-                    {t('welcome_title')}
-                  </h3>
-                  <p className="mb-4">{t('welcome_instruction')}</p>
+              <div className="empty-state">
+                <div className="empty-state-inner">
+                  <img src="/icon-128.png" alt="OWeb" className="empty-state-mark" />
+                  <h3 className="empty-state-title">{t('welcome_title')}</h3>
+                  <p className="empty-state-copy">{t('welcome_instruction')}</p>
                   {owebSignInError ? <p className="mb-3 text-sm text-red-500">{owebSignInError}</p> : null}
                   <button
+                    type="button"
                     disabled={owebSignInBusy}
+                    className="btn-primary"
                     onClick={() => {
                       setOwebSignInBusy(true);
                       setOwebSignInError(null);
@@ -1120,41 +1184,24 @@ const SidePanel = () => {
                         }
                         void checkModelConfiguration();
                       });
-                    }}
-                    className={`my-2 rounded-lg px-4 py-2 font-medium transition-colors ${
-                      isDarkMode ? 'bg-sky-600 text-white hover:bg-sky-700' : 'bg-sky-500 text-white hover:bg-sky-600'
-                    }`}>
+                    }}>
                     {owebSignInBusy ? 'Connecting…' : t('welcome_signIn')}
                   </button>
-                  <button
-                    onClick={() => chrome.runtime.openOptionsPage()}
-                    className={`my-2 rounded-lg px-4 py-2 font-medium transition-colors ${
-                      isDarkMode
-                        ? 'bg-slate-700 text-sky-100 hover:bg-slate-600'
-                        : 'bg-sky-100 text-sky-800 hover:bg-sky-200'
-                    }`}>
+                  <button type="button" className="btn-secondary" onClick={() => chrome.runtime.openOptionsPage()}>
                     {t('welcome_openSettings')}
                   </button>
-                  <div className="mt-4 text-sm opacity-75">
-                    <a
-                      href="https://oweb.one"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-700 hover:text-sky-600'}`}>
-                      oweb.one
-                    </a>
-                  </div>
+                  <a href="https://oweb.one" target="_blank" rel="noopener noreferrer" className="empty-link">
+                    oweb.one
+                  </a>
                 </div>
               </div>
             )}
 
-            {/* Show normal chat interface when models are configured */}
             {hasConfiguredModels === true && (
               <>
                 {messages.length === 0 && (
                   <>
-                    <div
-                      className={`border-t ${isDarkMode ? 'border-sky-900' : 'border-sky-100'} mb-2 p-2 shadow-sm backdrop-blur-sm`}>
+                    <div className="composer-wrap">
                       <ChatInput
                         onSendMessage={handleSendMessage}
                         onStopTask={handleStopTask}
@@ -1171,7 +1218,7 @@ const SidePanel = () => {
                         onReplay={handleReplay}
                       />
                     </div>
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="bookmarks-wrap flex-1 overflow-y-auto">
                       <BookmarkList
                         bookmarks={favoritePrompts}
                         onBookmarkSelect={handleBookmarkSelect}
@@ -1184,15 +1231,13 @@ const SidePanel = () => {
                   </>
                 )}
                 {messages.length > 0 && (
-                  <div
-                    className={`scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-2 ${isDarkMode ? 'bg-slate-900/80' : ''}`}>
-                    <MessageList messages={messages} isDarkMode={isDarkMode} />
+                  <div className="messages-scroll">
+                    <MessageList messages={messages} isDarkMode={isDarkMode} userDisplayName={userDisplayName} />
                     <div ref={messagesEndRef} />
                   </div>
                 )}
                 {messages.length > 0 && (
-                  <div
-                    className={`border-t ${isDarkMode ? 'border-sky-900' : 'border-sky-100'} p-2 shadow-sm backdrop-blur-sm`}>
+                  <div className="composer-wrap">
                     <ChatInput
                       onSendMessage={handleSendMessage}
                       onStopTask={handleStopTask}

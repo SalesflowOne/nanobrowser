@@ -1,37 +1,40 @@
+/** Display profiles for chat actors — UI labels only; engine IDs stay planner/navigator/etc. */
 export const ACTOR_PROFILES = {
   user: {
-    name: 'User',
+    name: 'You',
     icon: 'icons/user.svg',
-    iconBackground: '#4CAF50',
+    iconBackground: '#0B1B33',
   },
   system: {
-    name: 'System',
+    name: 'OWeb',
     icon: 'icons/system.svg',
-    iconBackground: '#2196F3',
+    iconBackground: '#0B1B33',
   },
   planner: {
-    name: 'Planner',
+    name: 'Super Agent',
     icon: 'icons/planner.svg',
-    iconBackground: '#FF9800',
+    iconBackground: '#0B1B33',
   },
   navigator: {
-    name: 'Navigator',
+    name: 'Browser',
     icon: 'icons/navigator.svg',
-    iconBackground: '#40A9FF',
+    iconBackground: '#0A86E0',
   },
   validator: {
-    name: 'Validator',
+    name: 'Checker',
     icon: 'icons/validator.svg',
-    iconBackground: '#EC407A',
+    iconBackground: '#16406B',
   },
   manager: {
     name: 'Manager',
     icon: 'icons/manager.svg',
-    iconBackground: '#9C27B0',
+    iconBackground: '#16406B',
   },
   evaluator: {
     name: 'Evaluator',
     icon: 'icons/evaluator.svg',
-    iconBackground: '#795548',
+    iconBackground: '#16406B',
   },
 } as const;
+
+export type ActorProfileKey = keyof typeof ACTOR_PROFILES;

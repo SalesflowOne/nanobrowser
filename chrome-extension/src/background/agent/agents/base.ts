@@ -115,6 +115,14 @@ export abstract class BaseAgent<T extends z.ZodType, M = unknown> {
       return false;
     }
 
+    // OWeb proxy maps OpenAI chat/completions → AI Gateway. Prefer manual JSON
+    // extraction so Planner/Navigator don't depend on provider-specific
+    // response_format / json_schema binding (Gemini via Gateway is picky).
+    if (this.provider === ProviderTypeEnum.OWeb) {
+      logger.debug(`[${this.modelName}] OWeb provider using manual JSON extraction`);
+      return false;
+    }
+
     return true;
   }
 
